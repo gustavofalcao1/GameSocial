@@ -1,23 +1,29 @@
-/**
- * If you are not familiar with React Navigation, refer to the "Fundamentals" guide:
- * https://reactnavigation.org/docs/getting-started
- *
- */
-import { FontAwesome } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import * as React from 'react';
-import { ColorSchemeName, Pressable } from 'react-native';
+import { ColorSchemeName, TouchableOpacity, Image } from 'react-native';
 
-import Colors from '../constants/Colors';
+import styles from '../src/styles/global'
 import useColorScheme from '../hooks/useColorScheme';
-import ModalScreen from '../screens/ModalScreen';
-import NotFoundScreen from '../screens/NotFoundScreen';
-import TabOneScreen from '../screens/TabOneScreen';
-import TabTwoScreen from '../screens/TabTwoScreen';
+
+import LoginScreen from '../src/screens/Login';
+import RegisterScreen from '../src/screens/Register';
+import FeedScreen from '../src/screens/Feed';
+import SearchScreen from '../src/screens/Search';
+import AddPostScreen from '../src/screens/AddPost';
+import InfiniteScreen from '../src/screens/Infinite';
+import ProfileScreen from '../src/screens/Profile';
+
+import MessengerScreen from '../src/screens/Messenger';
+import StatusScreen from '../src/screens/Status';
+import NotFoundScreen from '../src/screens/NotFound';
+
+import logo from '../assets/images/logo.png'
+
 import { RootStackParamList, RootTabParamList, RootTabScreenProps } from '../types';
 import LinkingConfiguration from './LinkingConfiguration';
+import { View } from '../components/Themed';
 
 export default function Navigation({ colorScheme }: { colorScheme: ColorSchemeName }) {
   return (
@@ -28,29 +34,23 @@ export default function Navigation({ colorScheme }: { colorScheme: ColorSchemeNa
     </NavigationContainer>
   );
 }
-
-/**
- * A root stack navigator is often used for displaying modals on top of all other content.
- * https://reactnavigation.org/docs/modal
- */
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
   return (
     <Stack.Navigator>
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }}/>
       <Stack.Screen name="Root" component={BottomTabNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="NotFound" component={NotFoundScreen} options={{ title: 'Oops!' }} />
-      <Stack.Group screenOptions={{ presentation: 'modal' }}>
-        <Stack.Screen name="Modal" component={ModalScreen} />
+      <Stack.Group screenOptions={{ presentation: 'card' }}>
+        <Stack.Screen name="Messenger" component={MessengerScreen} />
+        <Stack.Screen name="Status" component={StatusScreen} />
       </Stack.Group>
     </Stack.Navigator>
   );
 }
 
-/**
- * A bottom tab navigator displays tab buttons on the bottom of the display to switch screens.
- * https://reactnavigation.org/docs/bottom-tab-navigator
- */
 const BottomTab = createBottomTabNavigator<RootTabParamList>();
 
 function BottomTabNavigator() {
@@ -58,50 +58,104 @@ function BottomTabNavigator() {
 
   return (
     <BottomTab.Navigator
-      initialRouteName="TabOne"
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
-      }}>
+    initialRouteName="Feed"
+    screenOptions={({ navigation, route }) => ({
+      tabBarShowLabel: false,
+      headerTitle: () => (
+        <Image style={styles.headLogoTittle} source={logo} />
+      ),
+      headerRight: () => (
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+          style={styles.headerRightButton}
+          onPress={() => navigation.navigate('Status')}
+        >
+          <Ionicons name='heart-outline' size={25} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.headerRightButton}
+          onPress={() => navigation.navigate('Messenger')}
+        >
+          <Ionicons name='paper-plane-outline' size={25} />
+        </TouchableOpacity>
+        </View>
+      ),
+      tabBarIcon: ({ focused, color }) => {
+        let iconName
+        let iconSize
+
+        if (route.name === 'Feed') {
+          iconName = focused
+            ? 'home'
+            : 'home-outline'
+          iconSize = focused
+            ? 30
+            : 25
+        } else if (route.name === 'Search') {
+          iconName = focused 
+            ? 'search' 
+            : 'search-outline'
+          iconSize = focused
+            ? 30
+            : 25
+        } else if (route.name === 'AddPost') {
+          iconName = focused 
+            ? 'add' 
+            : 'add-outline'
+          iconSize = focused
+            ? 45
+            : 40
+        } else if (route.name === 'Infinite') {
+          iconName = focused 
+            ? 'infinite' 
+            : 'infinite-outline'
+          iconSize = focused
+            ? 30
+            : 25
+        } else if (route.name === 'Profile') {
+          iconName = focused 
+            ? 'ellipsis-horizontal' 
+            : 'ellipsis-horizontal-outline'
+          iconSize = focused
+            ? 30
+            : 25
+        }
+        return <Ionicons name={iconName} size={iconSize} color={color} />;
+      },
+      tabBarActiveTintColor: '#00CC10',
+      tabBarInactiveTintColor: '#666',
+    })}
+    >
       <BottomTab.Screen
-        name="TabOne"
-        component={TabOneScreen}
-        options={({ navigation }: RootTabScreenProps<'TabOne'>) => ({
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Pressable
-              onPress={() => navigation.navigate('Modal')}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.5 : 1,
-              })}>
-              <FontAwesome
-                name="info-circle"
-                size={25}
-                color={Colors[colorScheme].text}
-                style={{ marginRight: 15 }}
-              />
-            </Pressable>
-          ),
+        name="Feed"
+        component={FeedScreen}
+        options={({ }: RootTabScreenProps<'Feed'>) => ({
         })}
       />
       <BottomTab.Screen
-        name="TabTwo"
-        component={TabTwoScreen}
-        options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-        }}
+        name="Search"
+        component={SearchScreen}
+        options={({ }: RootTabScreenProps<'Search'>) => ({
+        })}
+      />
+      <BottomTab.Screen
+        name="AddPost"
+        component={AddPostScreen}
+        options={({ }: RootTabScreenProps<'AddPost'>) => ({
+        })}
+      />
+      <BottomTab.Screen
+        name="Infinite"
+        component={InfiniteScreen}
+        options={({ }: RootTabScreenProps<'Infinite'>) => ({
+        })}
+      />
+      <BottomTab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={({ }: RootTabScreenProps<'Profile'>) => ({
+        })}
       />
     </BottomTab.Navigator>
   );
-}
-
-/**
- * You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
- */
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={30} style={{ marginBottom: -3 }} {...props} />;
 }

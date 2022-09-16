@@ -15,20 +15,38 @@ const linking: LinkingOptions<RootStackParamList> = {
     screens: {
       Root: {
         screens: {
-          TabOne: {
+          Feed: {
             screens: {
-              TabOneScreen: 'one',
+              FeedScreen: 'feed',
             },
           },
-          TabTwo: {
+          Search: {
             screens: {
-              TabTwoScreen: 'two',
+              SearchScreen: 'search',
+            },
+          },
+          AddPost: {
+            screens: {
+              AddPostScreen: 'addPost',
+            },
+          },
+          Infinite: {
+            screens: {
+              InfiniteScreen: 'infinite',
+            },
+          },
+          Profile: {
+            screens: {
+              ProfileScreen: 'profile',
             },
           },
         },
       },
-      Modal: 'modal',
+      Messenger: 'messenger',
+      Status: 'status',
       NotFound: '*',
+      Login: 'login',
+      Register: 'register',
     },
   },
 };

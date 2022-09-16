@@ -1,11 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { LogBox } from 'react-native'
+import { SafeAreaProvider, } from 'react-native-safe-area-context';
 
 import useCachedResources from './hooks/useCachedResources';
 import useColorScheme from './hooks/useColorScheme';
 import Navigation from './navigation';
 
 export default function App() {
+  LogBox.ignoreLogs(['AsyncStorage has been extracted from react-native core'])
   const isLoadingComplete = useCachedResources();
   const colorScheme = useColorScheme();
 
