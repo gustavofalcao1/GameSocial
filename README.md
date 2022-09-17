@@ -1,3 +1,3 @@
-# CODAPP
+# GameSocial
 
 ## APP React Native
