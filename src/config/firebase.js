@@ -2,15 +2,26 @@ import firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
 import 'firebase/storage'
+import { 
+  FIREBASE_API_KEY,
+  FIREBASE_AUTH_DOMAIN,
+  FIREBASE_PROJECT_ID,
+  FIREBASE_STORAGE_BUCKET,
+  FIREBASE_MESSAGING_SENDER_ID,
+  FIREBASE_APP_ID,
+  FIREBASE_MEASUREMENT_ID
+} from '@env'
 
-firebase.initializeApp({
-  apiKey: "AIzaSyCdr7apGrxOsnBCvvfAljYX6Zk4KFgFflM",
-  authDomain: "social-a597f.firebaseapp.com",
-  projectId: "social-a597f",
-  storageBucket: "social-a597f.appspot.com",
-  messagingSenderId: "229264155720",
-  appId: "1:229264155720:web:d5c6dfc7ab63a4098fe47d",
-  measurementId: "G-RKGWHSK5GK"
-})
+// Configura o Firebase com as variáveis de ambiente
+const firebaseConfig = {
+  apiKey: FIREBASE_API_KEY,
+  authDomain: FIREBASE_AUTH_DOMAIN,
+  projectId: FIREBASE_PROJECT_ID,
+  storageBucket: FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
+  appId: FIREBASE_APP_ID,
+  measurementId: FIREBASE_MEASUREMENT_ID
+}
 
+firebase.initializeApp(firebaseConfig)
 export default firebase

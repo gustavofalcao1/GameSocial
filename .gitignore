@@ -13,3 +13,10 @@ web-build/
 
 # macOS
 .DS_Store
+
+# variáveis de ambiente
+.env
+.env.local
+.env.development
+.env.test
+.env.production
