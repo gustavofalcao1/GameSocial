@@ -20,6 +20,7 @@
 - **Expo**
 - **Firebase** (planned or optional)
 - **Yarn**
+- **Node.js 22**
 
 ---
 
