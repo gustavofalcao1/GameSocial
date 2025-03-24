@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { TouchableOpacity, Button, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import firebaseConfig, { auth } from '../../config/firebase'
-import { signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { Text, View, TextInput } from '../../../components/Themed'
 import styles from './styles'
 
@@ -14,18 +14,15 @@ export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(true)
 
   const handleAuth = () => {
-    setPersistence(auth, browserLocalPersistence)
-      .then(() => {
-        signInWithEmailAndPassword(auth, email, password)
-          .then((userCredential) => {
-            var user = userCredential.user;
-            navigation.navigate('Root')
-            return user
-          })
-          .catch((error) => {
-            var errorCode = error.code;
-            var errorMessage = error.message;
-          })
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        var user = userCredential.user;
+        navigation.navigate('Root')
+        return user
+      })
+      .catch((error) => {
+        var errorCode = error.code;
+        var errorMessage = error.message;
       });
   }
 
