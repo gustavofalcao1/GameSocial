@@ -9,8 +9,8 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
-import firebase from '../../config/firebase'
-
+import firebaseConfig, { auth } from '../../config/firebase'
+import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import styles from './styles'
 import { TextInput } from '../../../components/Themed'
 
@@ -20,16 +20,17 @@ const Profile = ({ navigation }) => {
   const [name, setName] = useState('')
 
   const getUser = () => {
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         setDataUser(user)
       } else {
+        // Usuário não logado
       }
     }); 
   }
 
-  const singOut = () => {
-    firebase.auth().signOut().then(() => {
+  const handleSignOut = () => {
+    signOut(auth).then(() => {
       navigation.navigate('Login')
     }).catch((error) => {
       var errorCode = error.code;
@@ -60,19 +61,21 @@ const Profile = ({ navigation }) => {
       setPickedImagePath(result.uri);
     }
   }
+
   const updateProfileImage = () => {
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
-        return user.updateProfile({
+        return updateProfile(user, {
           photoURL: pickedImagePath
         })       
       }
     })
   }
+
   const updateDisplayName = () => {
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
-        return user.updateProfile({
+        return updateProfile(user, {
           displayName: name
         })       
       }
@@ -120,9 +123,9 @@ const Profile = ({ navigation }) => {
       </View>
       <Text style={styles.title}>Email: {dataUser.email}</Text>
       <TouchableOpacity
-        onPress={singOut}
+        onPress={handleSignOut}
       >
-        <Text style={styles.btnTxt}>Sing Out</Text>
+        <Text style={styles.btnTxt}>Sign Out</Text>
       </TouchableOpacity>
     </View>
   )

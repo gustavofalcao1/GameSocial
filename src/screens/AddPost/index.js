@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useState, useEffect} from 'react'
 import {
   Text,
   View,
@@ -10,17 +10,17 @@ import {
 import { useNavigation } from '@react-navigation/native'
 import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
-import firebase from '../../config/firebase'
-
+import firebaseConfig, { auth, db, storage } from '../../config/firebase'
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import styles from './styles'
 
 const SERVER_URL = 'http://192.168.1.91:3000'
 
 const AddPost = () => {
-  const database = firebase.firestore()
-  const postsData = database.collection('Posts')
-  const storage = firebase.app().storage('gs://social-a597f.appspot.com')
-  const [docID, setDocID] = useState(docID)
+  const postsCollection = collection(db, 'Posts');
+  const [docID, setDocID] = useState([])
   const [placeText, setPlaceText] = useState('')
   const [descriptionText, setDescriptionText] = useState('')
   const navigation = useNavigation(); 
@@ -30,7 +30,7 @@ const AddPost = () => {
   const [loaded, setLoaded] = useState(false)
 
   const getUser = () => {
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         // User logged in already or has just logged in.
         setDataUser(user)
@@ -40,21 +40,27 @@ const AddPost = () => {
     }); 
   }
 
+  useEffect(() => {
+    getUser();
+  }, []);
+
   const getDocID = () => {
-    postsData.onSnapshot((query)=>{
+    onSnapshot(postsCollection, (query) => {
       const posts = []
-      query.forEach((doc)=>{
+      query.forEach((doc) => {
         posts.push(doc.id)
       })
       setDocID(posts)
     })
   }
+
   const momentDate = () => {
     const current = new Date();
     const date = `${current.getDate()}/${current.getMonth()+1}/${current.getFullYear()} ${current.getHours()}:${current.getMinutes()}`;
     
     return date
   }
+
   const randomID = () => {
     var text = "";
     var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -62,57 +68,55 @@ const AddPost = () => {
       text += possible.charAt(Math.floor(Math.random() * possible.length));
     return text;
   }
+
   const handlePlace = (text) => {
     setPlaceText(text)
   }
+
   const handleDescription = (text) => {
     setDescriptionText(text)
   }
+
   const updateImage = async () => {
     try {
-      
       const img = pickedImagePath.replace("file://", "")
       const filename = img.substring(img.lastIndexOf('/') + 1)
       setFileName(filename)
-
-    const blob = await new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = function() {
-        resolve(xhr.response);
-      };
-      xhr.onerror = function() {
-        reject(new TypeError("Network request failed"));
-      };
-      xhr.responseType = "blob";
-      xhr.open("GET", img, true);
-      xhr.send(null);
-    });
-    const ref =
-      storage
-      .ref()
-      .child(filename);
       
-    const task = ref.put(blob, { contentType: 'image/jpeg' });
-
-    task.on('state_changed', 
-      (snapshot) => {
-        console.log(snapshot.totalBytes)
-      }, 
-      (err) => {
-        console.log(err)
-      }, 
-      () => {
-        task.snapshot.ref.getDownloadURL().then((downloadURL) => {
-          console.log(downloadURL);
+      const blob = await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = function() {
+          resolve(xhr.response);
+        };
+        xhr.onerror = function() {
+          reject(new TypeError("Network request failed"));
+        };
+        xhr.responseType = "blob";
+        xhr.open("GET", img, true);
+        xhr.send(null);
       });
-    })
- 
-    
+      
+      const storageRef = ref(storage, filename);
+      const uploadTask = uploadBytesResumable(storageRef, blob);
+      
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          console.log(snapshot.totalBytes)
+        }, 
+        (err) => {
+          console.log(err)
+        }, 
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          console.log(downloadURL);
+        }
+      );
     } catch (error) {
       console.log("Error->", error);
       alert(`Error-> ${error}`);
     }
   }
+
   const addPost = async () => {
     getDocID()
     momentDate()
@@ -127,7 +131,7 @@ const AddPost = () => {
         if (docID.indexOf(id) > -1) {
           console.log('Doc ID exists')
         } else {
-          await postsData.doc(id).set({
+          await setDoc(doc(db, 'Posts', id), {
             id: id,
             author: dataUser.displayName,
             authorUid: dataUser.uid,
@@ -139,15 +143,16 @@ const AddPost = () => {
             postDate: currentDate,
             description: descriptionText,
             comment: 'My dream'
-          })
+          });
         }
       } catch (error) {
-        error
+        console.error(error)
       }
       goFeed()
       setLoaded(true)
     //}
   }
+
   const goFeed = () => {
     if (loaded) {
       navigation.navigate('Root')
@@ -161,8 +166,8 @@ const AddPost = () => {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync();
-    if (!result.cancelled) {
-      setPickedImagePath(result);
+    if (!result.canceled) {
+      setPickedImagePath(result.uri);
     }
   }
 
@@ -173,8 +178,8 @@ const AddPost = () => {
       return;
     }
     const result = await ImagePicker.launchCameraAsync();
-    if (!result.cancelled) {
-      setPickedImagePath(result);
+    if (!result.canceled) {
+      setPickedImagePath(result.uri);
     }
   }
 
@@ -194,7 +199,7 @@ const AddPost = () => {
           authorUid: `${dataUser.uid}`,
           authorProfile: `${dataUser.photoURL}`,
           place: `${placeText}`,
-          pictureUrl: `${pickedImagePath.uri}`,
+          pictureUrl: `${pickedImagePath}`,
           likesUser: [],
           likesCount: 0,
           postDate: `${currentDate}`,
@@ -224,7 +229,7 @@ const AddPost = () => {
           </TouchableOpacity>      
        </View>
        { pickedImagePath == '' ? null :
-        <Image source={{ uri: pickedImagePath.uri }} style={styles.image}/>}
+        <Image source={{ uri: pickedImagePath }} style={styles.image}/>}
       </View>
       <TextInput style = {styles.input}
         underlineColorAndroid = "transparent"

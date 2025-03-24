@@ -9,26 +9,25 @@ import {
   ActivityIndicator
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import firebase from '../../config/firebase'
-
+import firebaseConfig, { auth, db, storage } from '../../config/firebase'
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
+import { ref, getDownloadURL } from 'firebase/storage';
 import styles from './styles'
 
 const SERVER_URL = 'http://192.168.1.91:3000'
 
 const Feed = () => {
-  const database = firebase.firestore()
-  const postsData = database.collection('Posts')
-  const storage = firebase.app().storage('gs://social-a597f.appspot.com')
+  const postsCollection = collection(db, 'Posts');
+  
   const [dataPosts, setDataPosts] = useState([])
   const [loaded, setLoaded] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [dataUser, setDataUser] = useState([])
   const [imageTab, setImageTab] = useState([]);
-
   
-
   const getUser = () => {
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         // User logged in already or has just logged in.
         setDataUser(user)
@@ -42,16 +41,16 @@ const Feed = () => {
     getUser()
     setLoaded(true)
     try {
-      postsData.onSnapshot((query)=>{
+      onSnapshot(postsCollection, (query) => {
         const posts = []
-        query.forEach((doc)=>{
-          posts.push({ ...doc.data()})
+        query.forEach((doc) => {
+          posts.push({ ...doc.data(), id: doc.id })
         })
         setDataPosts(posts.sort((a, b) => (a.postDate > b.postDate) ? -1 : 1))
         setLoaded(false)
       })
     } catch (error) {
-      error
+      console.error(error)
     }
   }  
 
@@ -69,9 +68,7 @@ const Feed = () => {
   }
 
   // TESTANDO
-
   const [ gotData, setGotData ] = useState([]);
-
   const getData = async () => {
     await fetch(`${SERVER_URL}/posts`)
     .then(resposta => resposta.json())
@@ -100,12 +97,14 @@ const Feed = () => {
           return true;
         }
       });
+
     const onLikePress = async () => {
       const requestOptions = {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ likesCount: 'React PUT Request Example' })
-    };
+      };
+
       await fetch(`${SERVER_URL}/posts`, requestOptions)
       .then(resposta => resposta.json())
       .then( json => {
@@ -114,34 +113,31 @@ const Feed = () => {
       .catch(() => {
         console.log('Erro', 'Não foi possível carregar os dados');
       });
-      const incrementLike = firebase.firestore.FieldValue.increment(1)
-      const uncrementLike = firebase.firestore.FieldValue.increment(-1)
-      const incrementId = firebase.firestore.FieldValue.arrayUnion(idUser)
-      const uncrementId = firebase.firestore.FieldValue.arrayRemove(idUser)
+
+      const postRef = doc(db, 'Posts', id);
+      
       if (match !== undefined) {
         console.log('- like')
-        await postsData.doc(id)
-        .update({
-          likesUser: uncrementId,
-          likesCount: uncrementLike,
-        })
+        await updateDoc(postRef, {
+          likesUser: arrayRemove(idUser),
+          likesCount: increment(-1)
+        });
       }
+      
       if (match !== idUser) {
         console.log('+ like')
-        await postsData.doc(id)
-        .update({
-          likesUser: incrementId,
-          likesCount: incrementLike,
-        })
+        await updateDoc(postRef, {
+          likesUser: arrayUnion(idUser),
+          likesCount: increment(1)
+        });
       }
     }
 
     const returnurl = () => {
-      var ref = storage.ref('/'+item.pictureUrl)
-      const url = ref.getDownloadURL()
-      return url
-    }  
-
+      const imageRef = ref(storage, '/' + item.pictureUrl);
+      return getDownloadURL(imageRef);
+    }
+    
     return (
       <View style={styles.postContent}>
         <View style={styles.postHeader}>

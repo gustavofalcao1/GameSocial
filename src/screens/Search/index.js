@@ -4,12 +4,12 @@ import {
   View,
   FlatList,
   Image,
-  TouchableOpacity ,
+  TouchableOpacity,
   TextInput
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import firebase from '../../config/firebase'
-
+import firebaseConfig, { auth } from '../../config/firebase'
+import { onAuthStateChanged } from 'firebase/auth';
 import styles from './styles'
 
 const Search = () => {
@@ -17,9 +17,8 @@ const Search = () => {
   const [filteredDataSource, setFilteredDataSource] = useState([]);
   const [masterDataSource, setMasterDataSource] = useState([]);
 
-
   const getUser = () => {
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         setFilteredDataSource(user);
         setMasterDataSource(user);
@@ -27,6 +26,7 @@ const Search = () => {
     })
     console.log(masterDataSource.displayName)
   }
+
   const searchFilterFunction = (text) => {
     // Check if searched text is not blank
     if (text) {
@@ -56,6 +56,7 @@ const Search = () => {
       </Text>
     );
   }
+
   const ItemSeparatorView = () => {
     return (
       // Flat List Item Separator

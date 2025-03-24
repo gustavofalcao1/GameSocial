@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { TouchableOpacity, Button, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import firebase from '../../config/firebase'
-
+import firebaseConfig, { auth } from '../../config/firebase'
+import { signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { Text, View, TextInput } from '../../../components/Themed'
-
 import styles from './styles'
 
 export default function LoginScreen({ navigation }) {
@@ -14,18 +13,20 @@ export default function LoginScreen({ navigation }) {
   const [logged, setLogged] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const auth = () => {
-    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
-    firebase.auth().signInWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      var user = userCredential.user;
-      navigation.navigate('Root')
-      return user
-    })
-    .catch((error) => {
-      var errorCode = error.code;
-      var errorMessage = error.message;
-    })
+  const handleAuth = () => {
+    setPersistence(auth, browserLocalPersistence)
+      .then(() => {
+        signInWithEmailAndPassword(auth, email, password)
+          .then((userCredential) => {
+            var user = userCredential.user;
+            navigation.navigate('Root')
+            return user
+          })
+          .catch((error) => {
+            var errorCode = error.code;
+            var errorMessage = error.message;
+          })
+      });
   }
 
   const validateEmail = (text) => {
@@ -37,14 +38,17 @@ export default function LoginScreen({ navigation }) {
       setEmailValid(true);
     }
   };
+
   const validatePassword = (text) => {
       setPassword(text)
   };
+
   const goRegister = () => {
     navigation.navigate("Register")
   };
+
   const isLogged = () => {
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         setLogged(true) 
         navigation.navigate('Root')
@@ -53,7 +57,7 @@ export default function LoginScreen({ navigation }) {
         setLogged(false)
         setLoading(false)
        }
-    }) 
+    })
   }
 
   useEffect(() => {
@@ -108,7 +112,7 @@ export default function LoginScreen({ navigation }) {
             returnKeyType={'go'}
           />
           <View style={styles.separator} lightColor="rgba(0,0,0,0.4)" darkColor="rgba(255,255,255,0.1)" />
-          <TouchableOpacity style={styles.button} onPress={auth}
+          <TouchableOpacity style={styles.button} onPress={handleAuth}
           go >
             <Text style={styles.buttonTxt}>
               Enter
@@ -124,5 +128,4 @@ export default function LoginScreen({ navigation }) {
     </View>
   );
 }
-
 }

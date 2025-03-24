@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { TouchableOpacity } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import firebase from '../../config/firebase'
-
+import firebaseConfig, { auth } from '../../config/firebase'
+import { createUserWithEmailAndPassword, onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { Text, View, TextInput } from '../../../components/Themed'
-
 import styles from './styles'
 
 export default function RegisterScreen({ navigation }) {
@@ -14,18 +13,18 @@ export default function RegisterScreen({ navigation }) {
   const [emailValid, setEmailValid] = useState(false)
 
   const userRegistration = () => {
-    firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then((userCredential) => {
-      var user = userCredential.user;
-      navigation.navigate('Root')
-      return user.updateProfile({
-        displayName: name
+    createUserWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        var user = userCredential.user;
+        navigation.navigate('Root')
+        return updateProfile(user, {
+          displayName: name
+        })
       })
-    })
-    .catch((error) => {
-      var errorCode = error.code;
-      var errorMessage = error.message;
-    })
+      .catch((error) => {
+        var errorCode = error.code;
+        var errorMessage = error.message;
+      })
   }
 
   const validateEmail = (text) => {
@@ -37,22 +36,25 @@ export default function RegisterScreen({ navigation }) {
       setEmailValid(true);
     }
   };
+
   const validatePassword = (text) => {
       setPassword(text)
   };
+
   const validateName = (text) => {
     setName(text)
   };
+
   const goLogin = () => {
     navigation.navigate("Login")
   };
 
   useEffect(() => {
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       if (user) {
         navigation.navigate('Root')        
       }
-    }) 
+    })
   }, [])
 
   return (
